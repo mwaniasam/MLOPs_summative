@@ -14,7 +14,7 @@ YouTube: YOUR_LINK_HERE
 
 ## Live URL
 
-https://coffeeguard.onrender.com
+https://MLOPs_summative.onrender.com
 
 ---
 
@@ -37,7 +37,7 @@ Source: https://www.kaggle.com/datasets/alvarole/coffee-leaves-disease
 ## Project Structure
 
 ```
-coffeeguard/
+MLOPs_summative/
 │
 ├── README.md
 ├── .gitignore
@@ -47,7 +47,7 @@ coffeeguard/
 ├── locustfile.py
 │
 ├── notebook/
-│   └── coffeeguard.ipynb
+│   └── MLOPs_summative.ipynb
 │
 ├── src/
 │   ├── preprocessing.py
@@ -78,7 +78,7 @@ coffeeguard/
 │       └── Phoma/
 │
 └── models/
-    └── coffeeguard_model.h5
+    └── MLOPs_summative_model.h5
 ```
 
 ---
@@ -92,8 +92,8 @@ coffeeguard/
 
 ### Clone
 ```bash
-git clone https://github.com/mwaniasam/coffeeguard.git
-cd coffeeguard
+git clone https://github.com/mwaniasam/MLOPs_summative.git
+cd MLOPs_summative
 ```
 
 ### Install dependencies
@@ -105,7 +105,7 @@ pip install -r requirements.txt
 Download from Kaggle and organize into data/train/ and data/test/ following the structure above.
 
 ### Train the model
-Open notebook/coffeeguard.ipynb on Kaggle with GPU enabled and run all cells. Download the saved coffeeguard_model.h5 into the models/ folder.
+Open notebook/MLOPs_summative.ipynb on Kaggle with GPU enabled and run all cells. Download the saved MLOPs_summative_model.h5 into the models/ folder.
 
 ### Run locally
 ```bash

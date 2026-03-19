@@ -20,6 +20,8 @@ COPY . .
 
 RUN mkdir -p models data/uploads
 
-EXPOSE 8000
+RUN chmod +x start.sh
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000 8501
+
+CMD ["./start.sh"]

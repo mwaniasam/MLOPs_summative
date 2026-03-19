@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  coffeeguard:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      - MODEL_PATH=models/coffeeguard_model.h5
+    restart: unless-stopped
+
+  # Uncomment to scale horizontally for load testing
+  # coffeeguard2:
+  #   build: .
+  #   ports:
+  #     - "8001:8000"
+  #   volumes:
+  #     - ./models:/app/models
+  #     - ./data:/app/data
+  #   environment:
+  #     - MODEL_PATH=models/coffeeguard_model.h5
+  #   restart: unless-stopped

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoffeeGuard — Arabica Leaf Disease Classifier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2d5a27;
+    --green-light: #4a8c3f;
+    --green-pale: #e8f0e6;
+    --brown: #6b3a2a;
+    --cream: #faf7f2;
+    --white: #ffffff;
+    --gray: #6b7280;
+    --border: #e2e0da;
+    --red: #c0392b;
+    --orange: #e67e22;
+    --text: #1a1a1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--green);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.02em;
+  }
+
+  .logo span { color: #a8d5a0; }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.12);
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  nav {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 2rem;
+    gap: 0;
+  }
+
+  .nav-tab {
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .nav-tab:hover { color: var(--green); }
+
+  .nav-tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Dashboard */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .metric-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .metric-label {
+    font-size: 0.78rem;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--green);
+  }
+
+  .metric-sub {
+    font-size: 0.8rem;
+    color: var(--gray);
+    margin-top: 0.25rem;
+  }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .chart-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 1.2rem;
+    color: var(--text);
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .bar-label { width: 100px; color: var(--gray); text-align: right; flex-shrink: 0; }
+
+  .bar-track {
+    flex: 1;
+    height: 10px;
+    background: var(--green-pale);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--green-light);
+    border-radius: 999px;
+    transition: width 1s ease;
+  }
+
+  .bar-count { width: 50px; color: var(--gray); font-size: 0.78rem; }
+
+  .severity-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+  }
+
+  .severity-none { background: #4ade80; }
+  .severity-moderate { background: var(--orange); }
+  .severity-high { background: var(--red); }
+
+  /* Predict */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    background: white;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1.5rem;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--green-light);
+    background: var(--green-pale);
+  }
+
+  .upload-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--green-pale);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+  }
+
+  .upload-text { font-size: 0.95rem; color: var(--gray); }
+  .upload-text strong { color: var(--green); }
+
+  .btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+
+  .btn:hover { background: var(--green-light); }
+  .btn:disabled { background: var(--gray); cursor: not-allowed; }
+
+  .btn-secondary {
+    background: white;
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
+
+  .btn-secondary:hover { background: var(--green-pale); }
+
+  .preview-box {
+    display: none;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .preview-box.visible { display: flex; }
+
+  .preview-img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .result-panel { flex: 1; }
+
+  .result-class {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--green);
+    margin-bottom: 0.25rem;
+  }
+
+  .result-confidence {
+    font-size: 0.9rem;
+    color: var(--gray);
+    margin-bottom: 1rem;
+  }
+
+  .result-info {
+    background: var(--green-pale);
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .result-action {
+    font-size: 0.85rem;
+    color: var(--brown);
+    font-weight: 500;
+  }
+
+  .prob-bars { margin-top: 1rem; }
+
+  .prob-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .prob-label { width: 100px; color: var(--gray); }
+
+  .prob-track {
+    flex: 1;
+    height: 6px;
+    background: var(--green-pale);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .prob-fill {
+    height: 100%;
+    background: var(--green-light);
+    border-radius: 999px;
+  }
+
+  .prob-pct { width: 40px; text-align: right; color: var(--gray); }
+
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray);
+    font-size: 0.9rem;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--green-pale);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Upload & Retrain */
+  .upload-form {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group { margin-bottom: 1rem; }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    color: var(--text);
+  }
+
+  select, input[type="text"] {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: white;
+    color: var(--text);
+  }
+
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--green-light);
+  }
+
+  .file-list {
+    background: var(--green-pale);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    color: var(--gray);
+    margin-top: 0.5rem;
+    min-height: 40px;
+  }
+
+  .upload-status {
+    display: none;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  .upload-status.success {
+    display: block;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+
+  .upload-status.error {
+    display: block;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  .retrain-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .retrain-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--green-pale);
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-size: 0.88rem;
+    color: var(--green);
+  }
+
+  .info-text {
+    font-size: 0.85rem;
+    color: var(--gray);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  input[type="file"] { display: none; }
+
+  .file-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--green-pale);
+    color: var(--green);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid var(--green-light);
+    font-weight: 500;
+  }
+
+  .file-btn:hover { background: #d1e8cd; }
+
+  @media (max-width: 768px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .preview-box { flex-direction: column; }
+    .preview-img { width: 100%; height: 200px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Coffee<span>Guard</span></div>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    <span id="uptime-display">Loading...</span>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-tab active" onclick="showPage('dashboard', this)">Dashboard</div>
+  <div class="nav-tab" onclick="showPage('predict', this)">Predict</div>
+  <div class="nav-tab" onclick="showPage('retrain', this)">Retrain</div>
+</nav>
+
+<main>
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Overall Accuracy</div>
+        <div class="metric-value">98.8%</div>
+        <div class="metric-sub">On 11,713 validation images</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Macro F1 Score</div>
+        <div class="metric-value">98.4%</div>
+        <div class="metric-sub">Balanced across all 5 classes</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Macro Precision</div>
+        <div class="metric-value">98.5%</div>
+        <div class="metric-sub">Low false positive rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Macro Recall</div>
+        <div class="metric-value">98.3%</div>
+        <div class="metric-sub">Low false negative rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Model Uptime</div>
+        <div class="metric-value" id="uptime-metric">--</div>
+        <div class="metric-sub">Since last deployment</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Training Images</div>
+        <div class="metric-value">58.5k</div>
+        <div class="metric-sub">Arabica leaves from East Africa</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">Dataset Distribution by Class</div>
+        <div class="bar-row">
+          <div class="bar-label">Healthy</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <div class="bar-count">18,983</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Miner</div>
+          <div class="bar-track"><div class="bar-fill" style="width:89%"></div></div>
+          <div class="bar-count">16,978</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Leaf rust</div>
+          <div class="bar-track"><div class="bar-fill" style="width:44%"></div></div>
+          <div class="bar-count">8,336</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Cerscospora</div>
+          <div class="bar-track"><div class="bar-fill" style="width:40%"></div></div>
+          <div class="bar-count">7,681</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Phoma</div>
+          <div class="bar-track"><div class="bar-fill" style="width:35%"></div></div>
+          <div class="bar-count">6,571</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Per-Class F1 Score</div>
+        <div class="bar-row">
+          <div class="bar-label">Healthy</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <div class="bar-count">1.00</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Miner</div>
+          <div class="bar-track"><div class="bar-fill" style="width:99%"></div></div>
+          <div class="bar-count">0.99</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Phoma</div>
+          <div class="bar-track"><div class="bar-fill" style="width:99%"></div></div>
+          <div class="bar-count">0.99</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Cerscospora</div>
+          <div class="bar-track"><div class="bar-fill" style="width:98%"></div></div>
+          <div class="bar-count">0.98</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Leaf rust</div>
+          <div class="bar-track"><div class="bar-fill" style="width:96%"></div></div>
+          <div class="bar-count">0.96</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Disease Severity Classification</div>
+        <div style="font-size:0.85rem; line-height:2;">
+          <div><span class="severity-dot severity-none"></span><strong>Healthy</strong> — No action needed</div>
+          <div><span class="severity-dot severity-moderate"></span><strong>Cerscospora</strong> — Moderate. Apply copper fungicide</div>
+          <div><span class="severity-dot severity-high"></span><strong>Leaf rust</strong> — High. Immediate action required</div>
+          <div><span class="severity-dot severity-moderate"></span><strong>Miner</strong> — Moderate. Apply insecticide</div>
+          <div><span class="severity-dot severity-moderate"></span><strong>Phoma</strong> — Moderate. Prune and apply fungicide</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Model Architecture</div>
+        <div style="font-size:0.85rem; line-height:2; color: var(--gray);">
+          <div><strong style="color:var(--text)">Base model</strong> — MobileNetV2 (ImageNet)</div>
+          <div><strong style="color:var(--text)">Training</strong> — Two-phase transfer learning</div>
+          <div><strong style="color:var(--text)">Parameters</strong> — 2,620,997 total</div>
+          <div><strong style="color:var(--text)">Input size</strong> — 224 × 224 × 3</div>
+          <div><strong style="color:var(--text)">Optimizer</strong> — Adam, lr=0.0001</div>
+          <div><strong style="color:var(--text)">Regularization</strong> — L2 + Dropout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Predict -->
+  <div class="page" id="page-predict">
+    <h2 class="section-title">Diagnose a Coffee Leaf</h2>
+    <p class="info-text">Upload a clear photo of a single Arabica coffee leaf. The model will identify the disease class and recommended action.</p>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('predict-file').click()">
+      <input type="file" id="predict-file" accept="image/*" onchange="handlePredictFile(this)">
+      <div class="upload-icon">🌿</div>
+      <div class="upload-text"><strong>Click to upload</strong> or drag and drop a leaf image</div>
+      <div class="upload-text" style="margin-top:0.5rem; font-size:0.8rem;">JPG, PNG — max 10MB</div>
+    </div>
+
+    <div class="loading" id="predict-loading">
+      <div class="spinner"></div>
+      Analyzing leaf...
+    </div>
+
+    <div class="preview-box" id="preview-box">
+      <img class="preview-img" id="preview-img" src="" alt="Uploaded leaf">
+      <div class="result-panel">
+        <div class="result-class" id="result-class">--</div>
+        <div class="result-confidence" id="result-confidence"></div>
+        <div class="result-info" id="result-info"></div>
+        <div class="result-action" id="result-action"></div>
+        <div class="prob-bars" id="prob-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Retrain -->
+  <div class="page" id="page-retrain">
+    <h2 class="section-title">Upload Data & Retrain</h2>
+    <p class="info-text">Upload new labeled leaf images to improve the model. Select the disease class, upload the images, then trigger retraining.</p>
+
+    <div class="upload-form">
+      <div class="form-group">
+        <label>Disease Class</label>
+        <select id="upload-label">
+          <option value="">Select class...</option>
+          <option value="Cerscospora">Cerscospora</option>
+          <option value="Healthy">Healthy</option>
+          <option value="Leaf rust">Leaf rust</option>
+          <option value="Miner">Miner</option>
+          <option value="Phoma">Phoma</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Images</label>
+        <label class="file-btn" for="upload-files">Choose images</label>
+        <input type="file" id="upload-files" accept="image/*" multiple onchange="handleUploadFiles(this)">
+        <div class="file-list" id="file-list">No files selected</div>
+      </div>
+      <button class="btn" onclick="uploadImages()">Upload Images</button>
+      <div class="upload-status" id="upload-status"></div>
+    </div>
+
+    <div class="retrain-card">
+      <div class="chart-title">Trigger Retraining</div>
+      <p class="info-text" style="margin-top:0.5rem">Once images are uploaded, press the button below to retrain the model on the new data. Retraining runs in the background — check status below.</p>
+      <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn" onclick="triggerRetrain()">Retrain Model</button>
+        <button class="btn btn-secondary" onclick="checkRetrainStatus()">Check Status</button>
+      </div>
+      <div class="retrain-status" id="retrain-status" style="display:none"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const API = window.location.origin;
+
+  function showPage(name, tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    tab.classList.add('active');
+  }
+
+  async function loadMetrics() {
+    try {
+      const res = await fetch(API + '/metrics');
+      const data = await res.json();
+      document.getElementById('uptime-display').textContent = data.uptime;
+      document.getElementById('uptime-metric').textContent = data.uptime.split(' ')[0];
+    } catch (e) {
+      document.getElementById('uptime-display').textContent = 'offline';
+    }
+  }
+
+  loadMetrics();
+  setInterval(loadMetrics, 30000);
+
+  // Drag and drop
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processPredictFile(file);
+  });
+
+  function handlePredictFile(input) {
+    if (input.files[0]) processPredictFile(input.files[0]);
+  }
+
+  function processPredictFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('preview-img').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    predictImage(file);
+  }
+
+  async function predictImage(file) {
+    document.getElementById('predict-loading').style.display = 'block';
+    document.getElementById('preview-box').classList.remove('visible');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(API + '/predict', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      document.getElementById('result-class').textContent = data.predicted_class;
+      document.getElementById('result-confidence').textContent =
+        `Confidence: ${data.confidence}% — ${data.latency_ms}ms`;
+      document.getElementById('result-info').textContent = data.disease_info.description;
+      document.getElementById('result-action').textContent =
+        'Recommended action: ' + data.disease_info.action;
+
+      const probBars = document.getElementById('prob-bars');
+      probBars.innerHTML = '';
+      for (const [cls, pct] of Object.entries(data.all_probabilities)) {
+        probBars.innerHTML += `
+          <div class="prob-row">
+            <div class="prob-label">${cls}</div>
+            <div class="prob-track"><div class="prob-fill" style="width:${pct}%"></div></div>
+            <div class="prob-pct">${pct}%</div>
+          </div>`;
+      }
+
+      document.getElementById('predict-loading').style.display = 'none';
+      document.getElementById('preview-box').classList.add('visible');
+    } catch (e) {
+      document.getElementById('predict-loading').style.display = 'none';
+      alert('Prediction failed. Make sure the API is running.');
+    }
+  }
+
+  function handleUploadFiles(input) {
+    const names = Array.from(input.files).map(f => f.name);
+    document.getElementById('file-list').textContent =
+      names.length > 0 ? `${names.length} file(s): ${names.slice(0, 3).join(', ')}${names.length > 3 ? '...' : ''}` : 'No files selected';
+  }
+
+  async function uploadImages() {
+    const label = document.getElementById('upload-label').value;
+    const files = document.getElementById('upload-files').files;
+    const statusEl = document.getElementById('upload-status');
+
+    if (!label) { alert('Select a disease class first'); return; }
+    if (!files.length) { alert('Select at least one image'); return; }
+
+    const formData = new FormData();
+    for (const file of files) formData.append('files', file);
+
+    try {
+      const res = await fetch(`${API}/upload?label=${encodeURIComponent(label)}`, {
+        method: 'POST', body: formData
+      });
+      const data = await res.json();
+      statusEl.className = 'upload-status success';
+      statusEl.textContent = data.message;
+    } catch (e) {
+      statusEl.className = 'upload-status error';
+      statusEl.textContent = 'Upload failed. Make sure the API is running.';
+    }
+  }
+
+  async function triggerRetrain() {
+    const statusEl = document.getElementById('retrain-status');
+    statusEl.style.display = 'flex';
+    statusEl.textContent = 'Starting retraining...';
+
+    try {
+      const res = await fetch(API + '/retrain', { method: 'POST' });
+      const data = await res.json();
+      statusEl.textContent = data.message || JSON.stringify(data);
+    } catch (e) {
+      statusEl.textContent = 'Failed to trigger retraining.';
+    }
+  }
+
+  async function checkRetrainStatus() {
+    const statusEl = document.getElementById('retrain-status');
+    statusEl.style.display = 'flex';
+
+    try {
+      const res = await fetch(API + '/retrain/status');
+      const data = await res.json();
+      statusEl.textContent = `Status: ${data.last_status} | Training: ${data.is_training} | Last accuracy: ${data.last_accuracy ?? 'N/A'}%`;
+    } catch (e) {
+      statusEl.textContent = 'Could not fetch retraining status.';
+    }
+  }
+</script>
+</body>
+</html>

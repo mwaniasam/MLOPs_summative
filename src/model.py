@@ -122,19 +122,49 @@ def retrain(new_data_dir, model_path=MODEL_PATH, epochs=5):
         model_path: path to the saved model file
         epochs: number of fine-tuning epochs
     """
-    from src.preprocessing import build_retraining_dataset
+    import numpy as np
+    import os
 
     print(f"Loading existing model from {model_path}")
     model = tf.keras.models.load_model(model_path)
 
-    train_dataset, val_dataset, class_names = build_retraining_dataset(
-        new_data_dir, batch_size=32
+    # Build dataset manually to ensure all 5 classes are always used
+    all_paths = []
+    all_labels = []
+
+    for idx, cls in enumerate(CLASSES):
+        cls_path = os.path.join(new_data_dir, cls)
+        if not os.path.isdir(cls_path):
+            continue
+        for img in os.listdir(cls_path):
+            if img.lower().endswith((".jpg", ".jpeg", ".png")):
+                all_paths.append(os.path.join(cls_path, img))
+                all_labels.append(idx)
+
+    if not all_paths:
+        raise ValueError("No valid images found in upload directory")
+
+    print(f"Retraining on {len(all_paths)} images across classes: {list(set(all_labels))}")
+
+    all_paths_t = tf.constant(all_paths, dtype=tf.string)
+    all_labels_t = tf.constant(all_labels, dtype=tf.int32)
+
+    def load_and_preprocess(path, label):
+        image = tf.io.read_file(path)
+        image = tf.image.decode_jpeg(image, channels=3)
+        image = tf.image.resize(image, (224, 224))
+        image = tf.cast(image, tf.float32) / 255.0
+        label = tf.one_hot(label, depth=len(CLASSES))
+        return image, label
+
+    dataset = (
+        tf.data.Dataset.from_tensor_slices((all_paths_t, all_labels_t))
+        .shuffle(buffer_size=len(all_paths))
+        .map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
+        .batch(32)
+        .prefetch(tf.data.AUTOTUNE)
     )
 
-    if not class_names:
-        raise ValueError("No valid class folders found in upload directory")
-
-    print(f"Classes found: {class_names}")
     print(f"Fine-tuning for {epochs} epochs at learning rate 0.00001")
 
     model.compile(
@@ -144,14 +174,12 @@ def retrain(new_data_dir, model_path=MODEL_PATH, epochs=5):
     )
 
     history = model.fit(
-        train_dataset,
+        dataset,
         epochs=epochs,
-        validation_data=val_dataset,
+        verbose=1,
         callbacks=[
-            EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True),
-            ModelCheckpoint(model_path, monitor="val_accuracy", save_best_only=True)
-        ],
-        verbose=1
+            ModelCheckpoint(model_path, monitor="accuracy", save_best_only=True, verbose=1)
+        ]
     )
 
     model.save(model_path)

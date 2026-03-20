@@ -105,8 +105,13 @@ def build_retraining_dataset(data_dir, batch_size=32, validation_split=0.2, seed
 
     AUTOTUNE = tf.data.AUTOTUNE
 
+    train_paths_t = tf.constant(train_paths, dtype=tf.string)
+    train_labels_t = tf.constant(train_labels, dtype=tf.int32)
+    val_paths_t = tf.constant(val_paths, dtype=tf.string)
+    val_labels_t = tf.constant(val_labels, dtype=tf.int32)
+
     train_dataset = (
-        tf.data.Dataset.from_tensor_slices((train_paths, train_labels))
+        tf.data.Dataset.from_tensor_slices((train_paths_t, train_labels_t))
         .shuffle(buffer_size=500, seed=seed)
         .map(load_labeled, num_parallel_calls=AUTOTUNE)
         .map(augment, num_parallel_calls=AUTOTUNE)
@@ -115,7 +120,7 @@ def build_retraining_dataset(data_dir, batch_size=32, validation_split=0.2, seed
     )
 
     val_dataset = (
-        tf.data.Dataset.from_tensor_slices((val_paths, val_labels))
+        tf.data.Dataset.from_tensor_slices((val_paths_t, val_labels_t))
         .map(load_labeled, num_parallel_calls=AUTOTUNE)
         .batch(batch_size)
         .prefetch(AUTOTUNE)

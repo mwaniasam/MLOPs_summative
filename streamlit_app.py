@@ -211,11 +211,11 @@ if page == "Dashboard":
             hovertemplate="<b>%{y}</b><br>Images: %{x:,}<extra></extra>"
         ))
         fig1.update_layout(
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter", color="#1a1a1a", size=12),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            font=dict(family="Inter", color="#000000", size=13),
             height=300, margin=dict(l=0, r=40, t=10, b=0),
-            xaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
-            yaxis=dict(showgrid=False), showlegend=False
+            xaxis=dict(showgrid=True, gridcolor="#e5e7eb", zeroline=False, tickfont=dict(color="#111111", size=12), title_font=dict(color="#111111", size=13)),
+            yaxis=dict(showgrid=False, tickfont=dict(color="#111111", size=12)), showlegend=False
         )
         st.plotly_chart(fig1, use_container_width=True)
 
@@ -228,8 +228,8 @@ if page == "Dashboard":
             textinfo="percent",
         ))
         fig3.update_layout(
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter", color="#1a1a1a", size=11),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            font=dict(family="Inter", color="#000000", size=12),
             height=300, margin=dict(l=0, r=0, t=10, b=60), showlegend=True,
             legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
             annotations=[dict(text="5 Classes", x=0.5, y=0.5, font_size=14, font_family="Playfair Display", showarrow=False)]
@@ -247,8 +247,8 @@ if page == "Dashboard":
             hovertemplate=f"<b>%{{y}}</b><br>{title}: %{{x:.2f}}<extra></extra>"
         ), row=1, col=i+1)
     fig2.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font=dict(family="Inter", color="#1a1a1a", size=11),
+        plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+        font=dict(family="Inter", color="#000000", size=12),
         height=260, margin=dict(l=0, r=20, t=30, b=0)
     )
     for i in range(1, 4):
@@ -268,9 +268,9 @@ if page == "Dashboard":
             line_color="#2d5a27", line_width=2
         ))
         fig_r.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[97, 100]), bgcolor="white"),
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter", color="#1a1a1a", size=11),
+            polar=dict(radialaxis=dict(visible=True, range=[97, 100], tickfont=dict(color="#000000", size=11)), angularaxis=dict(tickfont=dict(color="#000000", size=11)), bgcolor="white"),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            font=dict(family="Inter", color="#000000", size=12),
             height=280, margin=dict(l=20, r=20, t=20, b=20), showlegend=False
         )
         st.plotly_chart(fig_r, use_container_width=True)
@@ -287,12 +287,12 @@ if page == "Dashboard":
         fig_t.add_trace(go.Scatter(x=all_epochs, y=[v*100 for v in all_val], mode="lines", name="Validation", line=dict(color="#4a8c3f", width=2, dash="dash")))
         fig_t.add_vrect(x0="P2-E1", x1="P2-E15", fillcolor="rgba(74,140,63,0.05)", line_width=0, annotation_text="Phase 2", annotation_position="top left")
         fig_t.update_layout(
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter", color="#1a1a1a", size=11),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            font=dict(family="Inter", color="#000000", size=12),
             height=280, margin=dict(l=0, r=0, t=20, b=0),
             legend=dict(orientation="h", y=-0.2),
-            yaxis=dict(range=[80, 101], showgrid=True, gridcolor="#f3f4f6", title="Accuracy (%)"),
-            xaxis=dict(showgrid=False, tickangle=45, tickfont=dict(size=8))
+            yaxis=dict(range=[80, 101], showgrid=True, gridcolor="#e5e7eb", title="Accuracy (%)", tickfont=dict(color="#111111", size=12), title_font=dict(color="#111111", size=13)),
+            xaxis=dict(showgrid=False, tickangle=45, tickfont=dict(color="#111111", size=10))
         )
         st.plotly_chart(fig_t, use_container_width=True)
 
@@ -330,8 +330,8 @@ elif page == "Model Evaluation":
             fig_hist.add_trace(go.Scatter(x=history["epoch"], y=history["loss"], mode="lines+markers", name="Train Loss", line=dict(color="#ef4444", width=2), marker=dict(size=6)), row=1, col=2)
             fig_hist.add_trace(go.Scatter(x=history["epoch"], y=history["val_loss"], mode="lines+markers", name="Val Loss", line=dict(color="#f97316", width=2, dash="dash"), marker=dict(size=6)), row=1, col=2)
             fig_hist.update_layout(
-                plot_bgcolor="white", paper_bgcolor="white",
-                font=dict(family="Inter", color="#1a1a1a", size=12),
+                plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+                font=dict(family="Inter", color="#000000", size=13),
                 height=350, margin=dict(l=0, r=0, t=30, b=0),
                 legend=dict(orientation="h", y=-0.15)
             )
@@ -368,11 +368,11 @@ elif page == "Model Evaluation":
             showscale=True
         ))
         fig_cm.update_layout(
-            plot_bgcolor="white", paper_bgcolor="white",
-            font=dict(family="Inter", color="#1a1a1a", size=12),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            font=dict(family="Inter", color="#000000", size=13),
             height=420, margin=dict(l=0, r=0, t=20, b=0),
-            xaxis=dict(title="Predicted", side="bottom"),
-            yaxis=dict(title="Actual", autorange="reversed")
+            xaxis=dict(title="Predicted", side="bottom", tickfont=dict(color="#111111", size=12), title_font=dict(color="#111111", size=13)),
+            yaxis=dict(title="Actual", autorange="reversed", tickfont=dict(color="#111111", size=12), title_font=dict(color="#111111", size=13))
         )
         st.plotly_chart(fig_cm, use_container_width=True)
 
@@ -415,11 +415,11 @@ elif page == "Model Evaluation":
             hovertemplate=f"<b>{cls}</b><br>FPR: %{{x:.3f}}<br>TPR: %{{y:.3f}}<extra></extra>"
         ))
     fig_roc.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font=dict(family="Inter", color="#1a1a1a", size=12),
+        plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+        font=dict(family="Inter", color="#000000", size=13),
         height=420, margin=dict(l=0, r=0, t=20, b=0),
-        xaxis=dict(title="False Positive Rate", showgrid=True, gridcolor="#f3f4f6", range=[0, 1]),
-        yaxis=dict(title="True Positive Rate", showgrid=True, gridcolor="#f3f4f6", range=[0, 1.02]),
+        xaxis=dict(title="False Positive Rate", showgrid=True, gridcolor="#e5e7eb", range=[0, 1], tickfont=dict(color="#111111", size=12), title_font=dict(color="#111111", size=13)),
+        yaxis=dict(title="True Positive Rate", showgrid=True, gridcolor="#e5e7eb", range=[0, 1.02], tickfont=dict(color="#111111", size=12), title_font=dict(color="#111111", size=13)),
         legend=dict(x=0.55, y=0.15, bgcolor="rgba(255,255,255,0.9)", bordercolor="#e8f0e6", borderwidth=1)
     )
     st.plotly_chart(fig_roc, use_container_width=True)
@@ -492,7 +492,7 @@ elif page == "Predict":
                         info = result["disease_info"]
                         probs = result["all_probabilities"]
                         sev = info["severity"]
-                        sev_icon = {"None": "?", "Moderate": "??", "High": "?"}.get(sev, "")
+                        sev_icon = ""
                         sev_class = f"severity-{sev.lower()}"
 
                         st.markdown(f"""
@@ -503,7 +503,7 @@ elif page == "Predict":
                             </p>
                             <div style="background:white;border-radius:8px;padding:1rem;margin-bottom:1rem;">
                                 <div style="font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;">Severity</div>
-                                <div class="{sev_class}" style="font-size:1.1rem;margin-top:4px;">{sev_icon} {sev}</div>
+                                <div class="{sev_class}" style="font-size:1.1rem;margin-top:4px;">{sev}</div>
                             </div>
                             <div style="background:white;border-radius:8px;padding:1rem;margin-bottom:1rem;">
                                 <div style="font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;">Diagnosis</div>
@@ -523,11 +523,11 @@ elif page == "Predict":
                             text=[f"{v:.1f}%" for v in df_probs["Probability"]], textposition="outside",
                         ))
                         fig.update_layout(
-                            plot_bgcolor="white", paper_bgcolor="white",
-                            font=dict(family="Inter", color="#1a1a1a", size=12),
+                            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+                            font=dict(family="Inter", color="#000000", size=13),
                             height=240, margin=dict(l=0, r=40, t=10, b=0),
-                            xaxis=dict(range=[0, 115], showgrid=True, gridcolor="#f3f4f6"),
-                            yaxis=dict(showgrid=False), showlegend=False
+                            xaxis=dict(range=[0, 115], showgrid=True, gridcolor="#e5e7eb", tickfont=dict(color="#111111", size=12)),
+                            yaxis=dict(showgrid=False, tickfont=dict(color="#111111", size=12)), showlegend=False
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     else:

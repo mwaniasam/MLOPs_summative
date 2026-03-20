@@ -48,14 +48,6 @@ app.include_router(predict.router)
 app.include_router(retrain.router)
 app.include_router(metrics.router)
 
-app.mount("/static", StaticFiles(directory="app/frontend"), name="static")
-
-
-@app.get("/")
-async def root():
-    return FileResponse("app/frontend/index.html")
-
-
 @app.get("/health")
 async def health():
     return {"status": "ok"}

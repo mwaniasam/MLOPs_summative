@@ -78,19 +78,18 @@ def build_retraining_dataset(data_dir, batch_size=32, validation_split=0.2, seed
             all_paths.append(os.path.join(cls_path, img))
             all_labels.append(class_indices[cls])
 
-    all_labels_onehot = tf.keras.utils.to_categorical(all_labels, num_classes=num_classes)
-
     split_idx = int(len(all_paths) * (1 - validation_split))
     train_paths = all_paths[:split_idx]
-    train_labels = all_labels_onehot[:split_idx]
+    train_labels = all_labels[:split_idx]
     val_paths = all_paths[split_idx:]
-    val_labels = all_labels_onehot[split_idx:]
+    val_labels = all_labels[split_idx:]
 
     def load_labeled(path, label):
         image = tf.io.read_file(path)
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.resize(image, IMG_SIZE)
         image = tf.cast(image, tf.float32) / 255.0
+        label = tf.one_hot(label, depth=num_classes)
         return image, label
 
     def augment(image, label):

@@ -1,38 +1,37 @@
-from locust import HttpUser, task, between
-import random
 import os
+import random
+from locust import HttpUser, task, between
 
-# Run with: locust -f locustfile.py --host=http://localhost:8000
-# Then open http://localhost:8089 to control the test
+# Find a real test image to use
+TEST_IMAGE_PATH = None
+test_dirs = [
+    os.path.expanduser("~/MLOPS/data/test/Healthy"),
+    os.path.expanduser("~/MLOPS/data/test/Miner"),
+]
+for d in test_dirs:
+    if os.path.exists(d):
+        files = [f for f in os.listdir(d) if f.endswith(".jpg")]
+        if files:
+            TEST_IMAGE_PATH = os.path.join(d, files[0])
+            break
+
+if TEST_IMAGE_PATH and os.path.exists(TEST_IMAGE_PATH):
+    with open(TEST_IMAGE_PATH, "rb") as f:
+        TEST_IMAGE_BYTES = f.read()
+    print(f"Using test image: {TEST_IMAGE_PATH}")
+else:
+    TEST_IMAGE_BYTES = None
+    print("No test image found")
 
 class CoffeeGuardUser(HttpUser):
     wait_time = between(1, 3)
 
     @task(3)
     def predict(self):
-        folders = [
-            "data/test/Healthy",
-            "data/test/Rust",
-            "data/test/Miner",
-            "data/test/Cercospora",
-            "data/test/Phoma",
-        ]
-
-        folder = random.choice(folders)
-
-        if os.path.exists(folder):
-            files = os.listdir(folder)
-            if files:
-                image_path = os.path.join(folder, files[0])
-                with open(image_path, "rb") as f:
-                    self.client.post(
-                        "/predict",
-                        files={"file": ("leaf.jpg", f, "image/jpeg")},
-                    )
-        else:
+        if TEST_IMAGE_BYTES:
             self.client.post(
                 "/predict",
-                files={"file": ("leaf.jpg", b"dummy", "image/jpeg")},
+                files={"file": ("leaf.jpg", TEST_IMAGE_BYTES, "image/jpeg")},
             )
 
     @task(1)

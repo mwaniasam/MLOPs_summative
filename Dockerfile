@@ -22,6 +22,8 @@ RUN mkdir -p models data/uploads
 
 RUN chmod +x start.sh
 
+ENV PORT=8501
+
 EXPOSE 8000 8501
 
 CMD ["./start.sh"]

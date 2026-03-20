@@ -1,9 +1,16 @@
 import os
-import shutil
 import threading
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
-from fastapi.responses import JSONResponse
 from typing import List
+
+from app.database import (
+    log_upload,
+    get_pending_uploads,
+    log_retrain_start,
+    log_retrain_complete,
+    log_retrain_failed,
+    get_retrain_history
+)
 
 router = APIRouter()
 
@@ -26,7 +33,7 @@ async def upload_images(
 ):
     """
     Upload multiple images for a given disease class label.
-    Images are saved to disk for retraining.
+    Images are saved to disk and recorded in the database.
     """
     if not label:
         raise HTTPException(status_code=400, detail="Label is required")
@@ -39,24 +46,39 @@ async def upload_images(
         if not file.content_type.startswith("image/"):
             continue
         dest = os.path.join(label_dir, file.filename)
+        content = await file.read()
         with open(dest, "wb") as f:
-            content = await file.read()
             f.write(content)
+
+        log_upload(
+            filename=file.filename,
+            label=label,
+            file_path=dest
+        )
         saved.append(file.filename)
 
     retraining_status["images_uploaded"] += len(saved)
 
     return {
-        "message": f"{len(saved)} images uploaded for class '{label}'",
+        "message": f"{len(saved)} images uploaded for class '{label}' and saved to database",
         "label": label,
         "saved_files": saved,
         "total_uploaded": retraining_status["images_uploaded"]
     }
 
 
-def run_retraining(model_path, upload_dir):
+@router.get("/uploads")
+async def list_uploads():
     """
-    Run retraining in a background thread so the API stays responsive.
+    Return all uploaded images recorded in the database.
+    """
+    return {"uploads": get_pending_uploads()}
+
+
+def run_retraining(model_path, upload_dir, retrain_id):
+    """
+    Run retraining in a background thread.
+    Logs progress and results to the database.
     """
     retraining_status["is_training"] = True
     retraining_status["last_status"] = "training"
@@ -65,15 +87,31 @@ def run_retraining(model_path, upload_dir):
         from src.model import retrain
         history = retrain(upload_dir, model_path=model_path, epochs=5)
 
-        val_acc = history.history.get("val_accuracy", [None])[-1]
-        retraining_status["last_accuracy"] = round(float(val_acc) * 100, 2) if val_acc else None
+        val_acc = history.history.get("accuracy", [None])[-1]
+        accuracy = round(float(val_acc) * 100, 2) if val_acc else None
+        images_used = sum(
+            len(os.listdir(os.path.join(upload_dir, d)))
+            for d in os.listdir(upload_dir)
+            if os.path.isdir(os.path.join(upload_dir, d))
+        )
+
+        log_retrain_complete(
+            retrain_id=retrain_id,
+            accuracy=accuracy,
+            images_used=images_used,
+            epochs=5
+        )
+
+        retraining_status["last_accuracy"] = accuracy
         retraining_status["last_status"] = "completed"
 
         import datetime
         retraining_status["last_trained_at"] = datetime.datetime.utcnow().isoformat()
 
     except Exception as e:
-        retraining_status["last_status"] = f"failed: {str(e)}"
+        error = str(e)
+        log_retrain_failed(retrain_id, error)
+        retraining_status["last_status"] = f"failed: {error}"
 
     finally:
         retraining_status["is_training"] = False
@@ -83,6 +121,7 @@ def run_retraining(model_path, upload_dir):
 async def trigger_retrain(request: Request):
     """
     Trigger model retraining on the uploaded images.
+    Logs the retraining event to the database.
     Retraining runs in background — check /retrain/status for progress.
     """
     if retraining_status["is_training"]:
@@ -100,16 +139,18 @@ async def trigger_retrain(request: Request):
         )
 
     model_path = request.app.state.model_path
+    retrain_id = log_retrain_start()
 
     thread = threading.Thread(
         target=run_retraining,
-        args=(model_path, UPLOAD_DIR),
+        args=(model_path, UPLOAD_DIR, retrain_id),
         daemon=True
     )
     thread.start()
 
     return {
         "message": "Retraining started in background",
+        "retrain_id": retrain_id,
         "classes_found": class_dirs,
         "check_status": "/retrain/status"
     }
@@ -121,3 +162,11 @@ async def retrain_status():
     Check the current status of retraining.
     """
     return retraining_status
+
+
+@router.get("/retrain/history")
+async def retrain_history():
+    """
+    Return the last 10 retraining events from the database.
+    """
+    return {"history": get_retrain_history()}

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.routes import predict, retrain, metrics
-
+from app.database import init_db
 
 MODEL_PATH = os.getenv("MODEL_PATH", "models/coffeeguard_model.h5")
 START_TIME = time.time()
@@ -16,13 +16,15 @@ START_TIME = time.time()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load model once at startup and store in app state
     import tensorflow as tf
     print(f"Loading model from {MODEL_PATH}")
     app.state.model = tf.keras.models.load_model(MODEL_PATH)
     app.state.start_time = START_TIME
     app.state.model_path = MODEL_PATH
     print("Model loaded successfully")
+
+    init_db()
+
     yield
     print("Shutting down")
 

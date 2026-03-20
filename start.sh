@@ -4,7 +4,7 @@
 uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 
 # Wait for FastAPI to be ready
-sleep 8
+sleep 15
 
 # Start Streamlit on port 8501 - this is what Render exposes
 exec streamlit run streamlit_app.py \

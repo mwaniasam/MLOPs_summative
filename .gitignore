@@ -45,3 +45,4 @@ data/uploads/
 
 # Render
 .render/
+data/coffeeguard.db

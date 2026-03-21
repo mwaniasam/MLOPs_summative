@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Start FastAPI on internal port 8000 in background
-uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+# Bind FastAPI to localhost only - Render cannot detect this port
+# This forces Render to always find Streamlit on 8501
+uvicorn app.main:app --host 127.0.0.1 --port 8000 &
 
 # Wait for FastAPI to be ready
-sleep 15
+sleep 10
 
-# Start Streamlit on port 8501 - this is what Render exposes
+# Start Streamlit on 0.0.0.0 - this is what Render detects and exposes
 exec streamlit run streamlit_app.py \
     --server.port 8501 \
     --server.address 0.0.0.0 \
